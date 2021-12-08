@@ -1,2 +1,0 @@
-link to the tutorial
-https://cstack.github.io/db_tutorial/
