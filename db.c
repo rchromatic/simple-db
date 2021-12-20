@@ -92,13 +92,9 @@ Pager* pager_open(const char* filename) {
 
     off_t file_length = lseek(fd, 0, SEEK_END);
 
-    Pager* pager = malloc(sizeof(Pager));
+    Pager* pager = calloc(1, sizeof(Pager));
     pager->file_descriptor = fd;
     pager->file_length = file_length;
-
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-        pager->pages[i] = NULL;
-    }
 
     return pager;
 }
@@ -201,9 +197,7 @@ void db_close(Table* table) {
         exit(EXIT_FAILURE);
     }
     for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-        void* page = pager->pages[i];
-        if(page) {
-            free(page);
+            free(pager->pages[i]);
             pager->pages[i] = NULL;
         }
     }
@@ -226,6 +220,9 @@ void print_prompt() { printf("db > ");}
 /* ssize_t getline(char **linetr, size_t *n, FILE *stream); */
 
 void read_input(InputBuffer* input_buffer) {
+    /*
+    I could not find what is allocating the input_buffer->buffer here. It must be preallocated before passing into getline.
+    */
     ssize_t bytes_read = getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
 
     if(bytes_read <= 0) {
@@ -280,10 +277,13 @@ PrepareResult prepare_statement(
     InputBuffer* input_buffer,
     Statement* statement
     ) {
-        if(strncmp(input_buffer->buffer, "insert", 6) == 0) {
+#define GIVE_ME_BETTER_NAME_INSERT "insert"
+#define GIVE_ME_BETTER_NAME_SELECT "select"
+
+        if(strncmp(input_buffer->buffer, GIVE_ME_BETTER_NAME_INSERT, sizeof(GIVE_ME_BETTER_NAME_INSERT) - 1) == 0) {
             return prepare_insert(input_buffer, statement);
         }
-        if(strcmp(input_buffer->buffer, "select") == 0) {
+        if(strcmp(input_buffer->buffer, GIVE_ME_BETTER_NAME_SELECT) == 0) {
             statement->type = STATEMENT_SELECT;
             return PREPARE_SUCCESS;
         }
